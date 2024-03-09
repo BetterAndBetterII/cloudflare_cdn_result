@@ -2,31 +2,81 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Display</title>
+    
+    <title>Cloudflare CDN Speed Test Result</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="./icon.ico" type="image/x-icon"> <!-- 网页图标 -->
     <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .copy-btn-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
+        .copy-btn {
+            margin-left: auto; /* Ensure the button aligns to the right */
         }
     </style>
 </head>
-<body>
-    <h1>CSV Content</h1>
+<body class="container py-5">
+    <div id="update-time" class="mb-3"></div>
+    <h1 class="mb-4">Cloudflare CDN Speed Test Result</h1>
     <div id="csv-root"></div>
+
     <script>
+        const repoOwner = 'BetterAndBetterII'; // Replace with your GitHub username or organization
+        const repoName = 'cloudflare_cdn_result'; // Replace with your repository name
+        const filePath = '/result.csv'; // Path to your file within the repository
+
+        async function fetchLastUpdatedTime() {
+            const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}/commits?path=${filePath}&page=1&per_page=1`;
+            const response = await fetch(apiURL);
+            const commits = await response.json();
+            if (commits.length > 0) {
+                const lastUpdated = new Date(commits[0].commit.committer.date);
+                return lastUpdated;
+            }
+            return null;
+        }
+
+        function updateLastUpdatedTime(time) {
+            const now = new Date();
+            const timeDiff = Math.floor((now - time) / 1000); // Time difference in seconds
+            let timeAgo;
+
+            if (timeDiff < 60) { // Less than 60 seconds
+                timeAgo = `${timeDiff} 秒前`;
+            } else if (timeDiff < 3600) { // Less than 60 minutes
+                timeAgo = `${Math.floor(timeDiff / 60)} 分钟前`;
+            } else { // Display in hours
+                timeAgo = `${Math.floor(timeDiff / 3600)} 小时前`;
+            }
+
+            document.getElementById('update-time').textContent = `更新于: ${timeAgo}`;
+        }
+
+        fetchLastUpdatedTime().then(lastUpdated => {
+            if (lastUpdated) {
+                updateLastUpdatedTime(lastUpdated);
+            }
+        });
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Copied to clipboard");
+            }, (err) => {
+                console.error('Could not copy text: ', err);
+            });
+        }
+
         fetch('result.csv')
             .then(response => response.text())
             .then(text => {
-                const rows = text.split('\n').map(row => row.split(','));
+                const rows = text.trim().split('\n').map(row => row.split(',')); // Trim to remove trailing new line
                 const table = document.createElement('table');
+                table.className = 'table table-striped';
                 const thead = document.createElement('thead');
                 const tbody = document.createElement('tbody');
 
@@ -43,10 +93,22 @@
                 // Add the rest of the data as table rows
                 rows.slice(1).forEach(row => {
                     const tr = document.createElement('tr');
-                    row.forEach(cellText => {
-                        const td = document.createElement('td');
-                        td.textContent = cellText;
-                        tr.appendChild(td);
+                    row.forEach((cellText, index) => {
+                        const cell = document.createElement('td');
+                        if (index === 0) { // First column
+                            const cellContent = document.createElement('div');
+                            cellContent.className = 'copy-btn-container';
+                            cellContent.textContent = cellText;
+                            const copyButton = document.createElement('button');
+                            copyButton.textContent = 'Copy';
+                            copyButton.className = 'btn btn-primary btn-sm copy-btn';
+                            copyButton.onclick = () => copyToClipboard(cellText);
+                            cellContent.appendChild(copyButton);
+                            cell.appendChild(cellContent);
+                        } else {
+                            cell.textContent = cellText;
+                        }
+                        tr.appendChild(cell);
                     });
                     tbody.appendChild(tr);
                 });
