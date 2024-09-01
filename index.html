@@ -23,6 +23,7 @@
 <body class="container py-5">
     <div id="update-time" class="mb-3"></div>
     <h1 class="mb-4">Cloudflare CDN Speed Test Result</h1>
+    <h5 id="server-ip" class="mb-2"></h5>
     <div id="csv-root"></div>
 
     <script>
@@ -118,6 +119,13 @@
                 document.getElementById('csv-root').appendChild(table);
             })
             .catch(error => console.error('Error loading the CSV file:', error));
+
+        fetch('ip')
+            .then(response => response.text())
+            .then(text => {
+                const ip = text.trim();
+                document.getElementById('server-ip').textContent = "服务器动态IP: " + ip;
+            })
     </script>
 </body>
 </html>
