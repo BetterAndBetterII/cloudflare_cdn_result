@@ -72,7 +72,7 @@
             });
         }
 
-        fetch('result.csv')
+        fetch('result.csv', { cache: 'no-store' })
             .then(response => response.text())
             .then(text => {
                 const rows = text.trim().split('\n').map(row => row.split(',')); // Trim to remove trailing new line
